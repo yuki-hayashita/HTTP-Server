@@ -1,5 +1,6 @@
 all:
-	go build ./cmd/server
-
+	go build -o server ./cmd/server 
+	go build -o client ./cmd/client
+	
 clean:
-	rm -fv server
+	rm -fv server client
