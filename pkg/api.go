@@ -12,7 +12,7 @@ const (
 	POST = 1
 )
 
-// HTTPRequest represents an HTTP request structure
+// HTTPRequest struct
 type HTTPRequest struct {
 	Method  string
 	Path    string
@@ -21,6 +21,7 @@ type HTTPRequest struct {
 	Body    string
 }
 
+// method to convert request from client into HTTPRequest struct
 func ParseHTTPRequest(requestString string) (HTTPRequest, error) {
 	request := HTTPRequest{
 		Headers: make(map[string]string),
@@ -28,7 +29,7 @@ func ParseHTTPRequest(requestString string) (HTTPRequest, error) {
 
 	lines := strings.Split(requestString, "\r\n")
 
-	// Parse the request line
+	// parse the requests
 	requestLine := strings.Split(lines[0], " ")
 	if len(requestLine) != 3 {
 		return HTTPRequest{}, fmt.Errorf("invalid HTTP request format: %s", requestString)
@@ -37,7 +38,7 @@ func ParseHTTPRequest(requestString string) (HTTPRequest, error) {
 	request.Path = requestLine[1]
 	request.Version = requestLine[2]
 
-	// Parse headers
+	// parse the headers
 	for i := 1; i < len(lines); i++ {
 		if lines[i] == "" {
 			// Empty line marks the end of headers
@@ -49,7 +50,6 @@ func ParseHTTPRequest(requestString string) (HTTPRequest, error) {
 		}
 	}
 
-	// Parse the body (assuming it's a simple POST request with form data)
 	if len(lines) > 0 {
 		request.Body = lines[len(lines)-1]
 	}

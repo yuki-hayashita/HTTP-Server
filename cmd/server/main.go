@@ -87,6 +87,7 @@ func handleRequest(conn net.Conn) {
 
 }
 
+// method that returns the content of an HTML page
 func serveContent(conn net.Conn, path string) {
 	filePath := HTMLDirectory + path
 	file, err := os.Open(filePath)
@@ -96,16 +97,12 @@ func serveContent(conn net.Conn, path string) {
 	}
 	defer file.Close()
 
-	// Send HTTP header
-
-	// Copy the file content to the response writer
-	// io.Copy(conn, file)
 	getResp(conn, file)
 }
 
+// method that returns a response for GET request
 func getResp(conn net.Conn, file *os.File) error {
 	defer conn.Close()
-	// Read the content of the file
 	fileInfo, err := file.Stat()
 	if err != nil {
 		return err
@@ -117,7 +114,7 @@ func getResp(conn net.Conn, file *os.File) error {
 		return err
 	}
 
-	// Create the HTTP response
+
 	response := fmt.Sprintf(
 		"HTTP/1.1 200 OK\r\n"+
 			"Content-Type: text/html\r\n"+
@@ -128,7 +125,6 @@ func getResp(conn net.Conn, file *os.File) error {
 		content,
 	)
 
-	// Write the HTTP response to the connection
 	_, err = conn.Write([]byte(response))
 	if err != nil {
 		return err
@@ -137,12 +133,12 @@ func getResp(conn net.Conn, file *os.File) error {
 	return nil
 }
 
+// method that returns a response for POSE request
 func postResp(conn net.Conn) error {
 	defer conn.Close()
 
 	content := "{'status' : 'success'}"
 
-	// Create the HTTP response
 	response := fmt.Sprintf(
 		"HTTP/1.1 200 OK\r\n"+
 			"Content-Type: text/html\r\n"+
@@ -153,7 +149,6 @@ func postResp(conn net.Conn) error {
 		content,
 	)
 
-	// Write the HTTP response to the connection
 	_, err := conn.Write([]byte(response))
 	if err != nil {
 		return err
@@ -162,20 +157,21 @@ func postResp(conn net.Conn) error {
 	return nil
 }
 
+// method that checks if directory exists
 func directoryExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 
 	if err != nil {
 		if os.IsNotExist(err) {
-			return false, nil // Directory does not exist
+			return false, nil 
 		}
-		return false, err // Other error (e.g., permission issues)
+		return false, err 
 	}
 
-	// The directory exists
 	return true, nil
 }
 
+// method that adds name to list of signup 
 func addListItemToFile(filePath, name string) {
 	filePath = HTMLDirectory + filePath
 	file, err := os.Open(filePath)
@@ -185,7 +181,6 @@ func addListItemToFile(filePath, name string) {
 	}
 	defer file.Close()
 
-	// Read the content of the HTML file
 	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return 
@@ -198,10 +193,9 @@ func addListItemToFile(filePath, name string) {
 
 	newListItem := fmt.Sprintf("        <li>%s</li>\n", name)
 
-	// Insert the new list item into the HTML content
+	// inserts name into list on sign-up page
 	modifiedContent := string(content[:insertIndex]) + newListItem + string(content[insertIndex:])
-	// log.Println(modifiedContent)
-	// Write the modified content back to the file
+
 	err = os.WriteFile(filePath, []byte(modifiedContent), 0644)
 	if err != nil {
 		return

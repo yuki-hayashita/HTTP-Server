@@ -13,7 +13,6 @@ import (
 )
 
 func main() {
-	// Connect to the server
 	if len(os.Args) < 2 {
 		log.Fatalf("Usage: must run client with right number of args: <listen-port>")
 	}
@@ -27,24 +26,6 @@ func main() {
 
 	handleInput(conn)
 
-	// Make a GET request for a specific file
-	// request := "GET /Users/naytewen/Desktop/HTTP-Server/files/HelloWorld.html HTTP/1.1\r\n\r\n"
-	// conn.Write([]byte(request))
-
-	// Read the response from the server
-	// buf := make([]byte, 1024)
-	// n, err := conn.Read(buf)
-	// if err != nil {
-	// 	fmt.Println("Error reading response:", err)
-	// 	return
-	// }
-
-	// response := string(buf[:n])
-	// fmt.Println("Server response:")
-	// fmt.Println(response)
-
-	// Save the response to a file
-	// saveToFile(response, "output.html")
 }
 
 func extractBody(httpResponse string) (string, error) {
@@ -59,6 +40,7 @@ func extractBody(httpResponse string) (string, error) {
 	return body, nil
 }
 
+// method that writes the content to file
 func writeToFile(content, filename string) {
 	content, _ = extractBody(content)
 
@@ -81,8 +63,8 @@ func writeToFile(content, filename string) {
 	fmt.Println("Writing to: ", filename)
 }
 
+// method that handles input from command line
 func handleInput(conn net.Conn) {
-	// need to put this in for loop
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Print("> ")
@@ -107,6 +89,7 @@ func handleInput(conn net.Conn) {
 	}
 }
 
+// method that handles response from server
 func handleResponse(conn net.Conn) {
 	buf := make([]byte, 1024)
 	n, err := conn.Read(buf)
