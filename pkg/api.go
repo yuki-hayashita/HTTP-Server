@@ -3,7 +3,7 @@ package api
 import (
 	// "bufio"
 	// "fmt"
-	"log"
+	"fmt"
 	"strings"
 )
 
@@ -17,25 +17,42 @@ type HTTPRequest struct {
 	Method  string
 	Path    string
 	Version string
+	Headers map[string]string
+	Body    string
 }
 
-// ParseHTTPRequest parses an HTTP request string and returns an HTTPRequest struct
 func ParseHTTPRequest(requestString string) (HTTPRequest, error) {
-	parts := strings.Split(requestString, " ")
-	log.Println(parts)
-	// if len(parts) != 3 {
-	// 	return HTTPRequest{}, fmt.Errorf("invalid HTTP request format: %s", requestString)
-	// }
-	log.Println("HERE")
-	log.Println(parts)
-	log.Println(requestString)
-	method := parts[0]
-	path := parts[1]
-	version := parts[2]
+	request := HTTPRequest{
+		Headers: make(map[string]string),
+	}
 
-	return HTTPRequest{
-		Method:  method,
-		Path:    path,
-		Version: version,
-	}, nil
+	lines := strings.Split(requestString, "\r\n")
+
+	// Parse the request line
+	requestLine := strings.Split(lines[0], " ")
+	if len(requestLine) != 3 {
+		return HTTPRequest{}, fmt.Errorf("invalid HTTP request format: %s", requestString)
+	}
+	request.Method = requestLine[0]
+	request.Path = requestLine[1]
+	request.Version = requestLine[2]
+
+	// Parse headers
+	for i := 1; i < len(lines); i++ {
+		if lines[i] == "" {
+			// Empty line marks the end of headers
+			break
+		}
+		headerParts := strings.SplitN(lines[i], ": ", 2)
+		if len(headerParts) == 2 {
+			request.Headers[headerParts[0]] = headerParts[1]
+		}
+	}
+
+	// Parse the body (assuming it's a simple POST request with form data)
+	if len(lines) > 0 {
+		request.Body = lines[len(lines)-1]
+	}
+
+	return request, nil
 }

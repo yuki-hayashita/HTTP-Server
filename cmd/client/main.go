@@ -93,7 +93,7 @@ func handleInput(conn net.Conn) {
 		}
 		lineSplit := (strings.Split(request, " "))
 		switch lineSplit[0] {
-		case "GET":
+		case "GET" :
 			conn.Write([]byte(request))
 			handleResponse(conn)
 		case "quit\n":

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	api "http-server/pkg"
 	"io"
+	"strconv"
+
 	"log"
 	"net"
 	"os"
@@ -22,6 +24,10 @@ func main() {
 	HTMLDirectory = strings.TrimSuffix(os.Args[2], "/")
 	addr := ":" + portNumber
 	listener, err := net.Listen("tcp", addr)
+	if err != nil{
+		log.Println("Error creating listener!", err)
+		return
+	}
 
 	_, err = directoryExists(HTMLDirectory)
 	if err != nil {
@@ -49,7 +55,6 @@ func main() {
 }
 
 func handleRequest(conn net.Conn) {
-	defer conn.Close()
 
 	buf := make([]byte, 1024)
 	_, err := conn.Read(buf)
@@ -58,16 +63,28 @@ func handleRequest(conn net.Conn) {
 		return
 	}
 
-
 	request, _ := api.ParseHTTPRequest(string(buf))
 
-	if request.Method != "GET" {
+	if request.Method == "GET" {
+		serveContent(conn, request.Path)
+	} else if request.Method == "POST" {
+		log.Println(request.Headers["Content-Length"])
+
+		if request.Body[0:5] != "name=" {
+			log.Println("Invalid val!")
+		}
+		length, err := strconv.Atoi(request.Headers["Content-Length"])
+		if err != nil {
+			log.Println("ERROR IN CONVERSION")
+			return
+		}
+		addListItemToFile(request.Path, request.Body[5:length])
+		postResp(conn)
+	} else {
 		log.Println(request.Method)
 		log.Println("INVALID REQUEST!")
-		return
 	}
 
-	serveContent(conn, request.Path)
 }
 
 func serveContent(conn net.Conn, path string) {
@@ -83,10 +100,11 @@ func serveContent(conn net.Conn, path string) {
 
 	// Copy the file content to the response writer
 	// io.Copy(conn, file)
-	serveHTMLFile(conn, file)
+	getResp(conn, file)
 }
 
-func serveHTMLFile(conn net.Conn, file *os.File) error {
+func getResp(conn net.Conn, file *os.File) error {
+	defer conn.Close()
 	// Read the content of the file
 	fileInfo, err := file.Stat()
 	if err != nil {
@@ -119,6 +137,31 @@ func serveHTMLFile(conn net.Conn, file *os.File) error {
 	return nil
 }
 
+func postResp(conn net.Conn) error {
+	defer conn.Close()
+
+	content := "{'status' : 'success'}"
+
+	// Create the HTTP response
+	response := fmt.Sprintf(
+		"HTTP/1.1 200 OK\r\n"+
+			"Content-Type: text/html\r\n"+
+			"Content-Length: %d\r\n"+
+			"\r\n"+
+			"%s",
+		len(content),
+		content,
+	)
+
+	// Write the HTTP response to the connection
+	_, err := conn.Write([]byte(response))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func directoryExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 
@@ -131,4 +174,38 @@ func directoryExists(path string) (bool, error) {
 
 	// The directory exists
 	return true, nil
+}
+
+func addListItemToFile(filePath, name string) {
+	filePath = HTMLDirectory + filePath
+	file, err := os.Open(filePath)
+	if err != nil {
+		log.Println("COULD NOT FIND FILE!")
+		return 
+	}
+	defer file.Close()
+
+	// Read the content of the HTML file
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return 
+	}
+	insertIndex := strings.Index(string(content), "</ol>")
+	if insertIndex == -1 {
+		log.Println("couldn't find </ol> tag in HTML file")
+		return 
+	}
+
+	newListItem := fmt.Sprintf("        <li>%s</li>\n", name)
+
+	// Insert the new list item into the HTML content
+	modifiedContent := string(content[:insertIndex]) + newListItem + string(content[insertIndex:])
+	// log.Println(modifiedContent)
+	// Write the modified content back to the file
+	err = os.WriteFile(filePath, []byte(modifiedContent), 0644)
+	if err != nil {
+		return
+	}
+
+	 
 }
